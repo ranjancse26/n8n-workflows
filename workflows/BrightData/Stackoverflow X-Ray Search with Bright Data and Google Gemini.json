@@ -1,0 +1,630 @@
+{
+  "name": "Stackoverflow X-Ray Search with Bright Data and Google Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -32
+      ],
+      "id": "37f7bde9-8237-492d-9fbf-05f20cd8a608",
+      "name": "Google Gemini Chat Model for Google Search",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"$schema\": \"http://json-schema.org/schema#\",\n  \"title\": \"Search Results Schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"results\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\"rank\", \"title\", \"type\"],\n        \"properties\": {\n          \"rank\": {\n            \"type\": \"integer\",\n            \"minimum\": 1\n          },\n          \"title\": {\n            \"type\": \"string\"\n          },\n          \"url\": {\n            \"type\": \"string\",\n            \"format\": \"uri\"\n          },\n          \"snippet\": {\n            \"type\": \"string\"\n          },\n          \"type\": {\n            \"type\": \"string\",\n            \"enum\": [\"organic\", \"paid\", \"featured\"]\n          }\n        },\n        \"additionalProperties\": false\n      }\n    }\n  },\n  \"required\": [\"results\"],\n  \"additionalProperties\": false\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        -32
+      ],
+      "id": "c4cdc9db-d21b-4d30-807d-865e4fb65167",
+      "name": "Structured Output Parser for Google Search"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert technical sourcer. Your task is to convert natural language requests into Boolean X-Ray search strings for Stack Overflow profiles using Google/Bing.\n\nHere's the input query : {{ $json.search }}\n\nRules:\n\nAlways use site:stackoverflow.com/users.\n\nInclude skills in (\"skill1\" OR \"skill2\" OR ...).\n\nIf a name is provided, include it in the query.\n\nKeep location inside quotes if mentioned.\n\nOutput only the final search string.\n\nExample Conversions:\n\nInput:\nFind me Python and Django developers in Berlin.\n\nsite:stackoverflow.com/users (\"Python\" OR \"Django\") \"Berlin\"\n\nInput:\nLook for John Doe, full stack developer with Docker and React in London.\n\nsite:stackoverflow.com/users (\"John Doe\" OR \"Full Stack Developer\") (\"Docker\" OR \"React\") \"London\"\n",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        288,
+        -256
+      ],
+      "id": "06511403-a630-4b6c-987b-db00871a9f5f",
+      "name": "X Ray Query Builder",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -32
+      ],
+      "id": "de5f0357-50dc-4e5d-be40-8f4f99aded81",
+      "name": "Google Gemini Chat Model for X Ray Builder",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract the following:\n\nRank (position in list)\n\nTitle\n\nURL\n\nSnippet/description\n\nType (organic/ads/map)\n\n{{ $json.body }}\n\nMake sure to return the data in JSON",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        864,
+        -256
+      ],
+      "id": "7dc4f370-5199-4077-aa88-0373884bf808",
+      "name": "Structured Data Extractor",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "zone": {
+          "__rl": true,
+          "mode": "list",
+          "value": "web_unlocker1"
+        },
+        "country": {
+          "__rl": true,
+          "mode": "list",
+          "value": "us"
+        },
+        "url": "={{ $('Set input fields for chat').item.json.url }}?q={{ encodeURI($json.text) }}&start={{ $('Set input fields for chat').item.json.start }}",
+        "format": "json",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightData",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -256
+      ],
+      "id": "dcaee4ce-5e4f-4692-a6cb-b307ab14333f",
+      "name": "Access and extract data from a specific URL",
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        -256
+      ],
+      "id": "e3530362-ef5d-4674-9f7a-4937d6f6f14a",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "11vCjXTjizyGLwIjlWGk6D4QUk0TET7Jd3f4jFZRpD6A",
+          "mode": "list",
+          "cachedResultName": "Stackoverflow XRay Search",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11vCjXTjizyGLwIjlWGk6D4QUk0TET7Jd3f4jFZRpD6A/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11vCjXTjizyGLwIjlWGk6D4QUk0TET7Jd3f4jFZRpD6A/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "url"
+          ],
+          "schema": [
+            {
+              "id": "rank",
+              "displayName": "rank",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1440,
+        -256
+      ],
+      "id": "7023d6c2-484a-43f9-b6dc-462c693c22de",
+      "name": "Stackoverflow XRay Search",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Zjoxh2BUZ6VXGQhA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -160,
+        -736
+      ],
+      "id": "089b299a-f629-4a13-ae90-18286ec2fac3",
+      "name": "When chat message received",
+      "webhookId": "0f9ac20f-f25e-4699-82cb-eeeb1e6ddb3f"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent agent; you need to decide on the suitable search engines for scraping the data. Construct the URL for searching based upon the requested search engine\n\nUse the Bright Data tool for accomplishing the searches based upon the suitable search provider.\n\nFor Google Search, use https://www.google.com/search?q={{ encodeURI($json.text) }}\n\nFor Bing Search, use https://www.bing.com/search?q={{ encodeURI($json.text) }}\n\nFor DuckDuckGo Search, use https://duckduckgo.com/q={{ encodeURI($json.text) }}&ia=web\n\nOutput:\n\nParse the raw html and show the human readable search response",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        816,
+        -736
+      ],
+      "id": "11b7cf78-ffb4-4b47-b0b9-6e11684e6afe",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "zone": {
+          "__rl": true,
+          "mode": "list",
+          "value": "web_unlocker1"
+        },
+        "country": {
+          "__rl": true,
+          "mode": "list",
+          "value": "us"
+        },
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "format": "json",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightDataTool",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        -512
+      ],
+      "id": "e644761e-6807-4c8f-86f7-93ccffd9b822",
+      "name": "Access and extract data from a specific URL in BrightData",
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -256
+      ],
+      "id": "8ea791ff-7710-42a5-8203-21a94196412c",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0ac91db2-9848-40d4-b942-cd7288597ded",
+              "name": "url",
+              "value": "https://www.google.com/search",
+              "type": "string"
+            },
+            {
+              "id": "f5b7e10d-bcd8-439c-8e84-ba4af11f2cd2",
+              "name": "search",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "3a0bcec2-ec6d-457f-87a5-b73f4d826b2a",
+              "name": "zone",
+              "value": "web_unlocker1",
+              "type": "string"
+            },
+            {
+              "id": "b1b1a771-bc42-4f9c-adaf-a2882a42ed5b",
+              "name": "start",
+              "value": "10",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        -256
+      ],
+      "id": "8fad2597-1de8-4c8a-8ef7-35c2d51e7860",
+      "name": "Set input fields for manual trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f5b7e10d-bcd8-439c-8e84-ba4af11f2cd2",
+              "name": "search",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "3a0bcec2-ec6d-457f-87a5-b73f4d826b2a",
+              "name": "zone",
+              "value": "web_unlocker1",
+              "type": "string"
+            },
+            {
+              "id": "b1b1a771-bc42-4f9c-adaf-a2882a42ed5b",
+              "name": "start",
+              "value": "10",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        -736
+      ],
+      "id": "850ebb25-8067-4b85-abc4-72e1558a02b4",
+      "name": "Set input fields for chat"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -512
+      ],
+      "id": "3a7cf6d9-2139-4494-b69a-b2198ef49cb3",
+      "name": "Google Gemini Chat Model for AI Agent",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert technical sourcer. Your task is to convert natural language requests into Boolean X-Ray search strings for Stack Overflow profiles using Google/Bing/DuckDuckGo.\n\nHere's the input query : {{ $json.search }}\n\nRules:\n\nAlways use site:stackoverflow.com/users.\n\nInclude skills in (\"skill1\" OR \"skill2\" OR ...).\n\nIf a name is provided, include it in the query.\n\nKeep location inside quotes if mentioned.\n\nOutput only the final search string.\n\nExample Conversions:\n\nInput:\nFind me Python and Django developers in Berlin.\n\nsite:stackoverflow.com/users (\"Python\" OR \"Django\") \"Berlin\"\n\nInput:\nLook for John Doe, full stack developer with Docker and React in London.\n\nsite:stackoverflow.com/users (\"John Doe\" OR \"Full Stack Developer\") (\"Docker\" OR \"React\") \"London\"\n",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        432,
+        -736
+      ],
+      "id": "3b704278-93ac-4baf-9d70-3d2d29e72736",
+      "name": "X Ray Query Builder for Chat",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        464,
+        -464
+      ],
+      "id": "3c447197-e55c-4d4c-ba6d-7439bf546a24",
+      "name": "Google Gemini Chat Model for X Ray Builder for Chat",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model for Google Search": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Data Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser for Google Search": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Structured Data Extractor",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for X Ray Builder": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "X Ray Query Builder",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X Ray Query Builder": {
+      "main": [
+        [
+          {
+            "node": "Access and extract data from a specific URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Data Extractor": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Access and extract data from a specific URL": {
+      "main": [
+        [
+          {
+            "node": "Structured Data Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Stackoverflow XRay Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Set input fields for chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Access and extract data from a specific URL in BrightData": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set input fields for manual trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set input fields for manual trigger": {
+      "main": [
+        [
+          {
+            "node": "X Ray Query Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set input fields for chat": {
+      "main": [
+        [
+          {
+            "node": "X Ray Query Builder for Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for AI Agent": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X Ray Query Builder for Chat": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for X Ray Builder for Chat": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "X Ray Query Builder for Chat",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "06254066-ce44-4a69-9609-eb84377f5c30",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "885b4fb4a6a9c2cb5621429a7b972df0d05bb724c20ac7dac7171b62f1c7ef40"
+  },
+  "id": "KdWvksnL7wCvbe25",
+  "tags": [
+    {
+      "createdAt": "2025-04-09T01:31:00.558Z",
+      "updatedAt": "2025-04-09T01:31:00.558Z",
+      "id": "Kujft2FOjmOVQAmJ",
+      "name": "Engineering"
+    },
+    {
+      "createdAt": "2025-04-13T15:23:40.462Z",
+      "updatedAt": "2025-04-13T15:23:40.462Z",
+      "id": "ZOwtAMLepQaGW76t",
+      "name": "Building Blocks"
+    },
+    {
+      "createdAt": "2025-04-13T05:38:08.053Z",
+      "updatedAt": "2025-04-13T05:38:08.053Z",
+      "id": "ddPkw7Hg5dZhQu2w",
+      "name": "AI"
+    }
+  ]
+}
