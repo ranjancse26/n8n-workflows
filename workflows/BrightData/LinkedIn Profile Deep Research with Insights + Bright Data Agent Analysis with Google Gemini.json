@@ -1,0 +1,915 @@
+{
+  "name": "LinkedIn Profile Deep Research with Insights + Bright Data Agent Analysis with Google Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "45861a0c-fa5b-4583-8f53-b4a62603e6f7",
+              "name": "url",
+              "value": "={{ $json.output.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        752
+      ],
+      "id": "c61187db-5ddb-4490-b469-c8d95da03884",
+      "name": "Set Input Fields"
+    },
+    {
+      "parameters": {
+        "zone": {
+          "__rl": true,
+          "mode": "list",
+          "value": "web_unlocker1"
+        },
+        "country": {
+          "__rl": true,
+          "mode": "list",
+          "value": "us"
+        },
+        "url": "={{ $json.url }}",
+        "format": "json",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightData",
+      "typeVersion": 1,
+      "position": [
+        784,
+        752
+      ],
+      "id": "b4d8d1a8-6354-4184-8d2d-233656bcaeed",
+      "name": "Access and extract data from a specific URL",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5f71d61a-6a33-4f96-be73-d9ea2e3e6970",
+              "name": "status_code",
+              "value": "={{ $json.status_code }}",
+              "type": "string"
+            },
+            {
+              "id": "d601139d-e4f8-403b-95b6-8e73d1ce81a7",
+              "name": "body",
+              "value": "={{ $json.body }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1008,
+        752
+      ],
+      "id": "b352e882-36d8-4b77-9a9b-b0edb422477f",
+      "name": "Set the Scraped Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c07c0442-cccc-4307-9d33-a5386622fcf9",
+              "leftValue": "={{ $json.status_code }}",
+              "rightValue": "200",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1232,
+        752
+      ],
+      "id": "3ccc80e8-3fde-4958-adb9-3ba9f5f77ace",
+      "name": "If status code <> 200"
+    },
+    {
+      "parameters": {
+        "errorMessage": "502"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        368
+      ],
+      "id": "23a794e6-0632-49ac-b573-0f8be5ad6829",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        864
+      ],
+      "id": "6b7b671f-0659-4fd5-8579-1e9802cacf50",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Chat Input\n\nAnalyze the profile https://www.linkedin.com/in/ranjan-dailata/",
+        "height": 300,
+        "width": 480
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "id": "aae9acc5-f3dd-488b-9488-b889e6121997",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## LLM Usages\n\nGoogle Gemini Flash Exp model is being used.\n\nBasic LLM Chain Data Extractor.",
+        "height": 300,
+        "width": 480,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        512,
+        400
+      ],
+      "id": "1a066cd0-c7f9-4da4-8c4e-1e154547f683",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Logo\n\n\n![logo](https://images.seeklogo.com/logo-png/43/1/brightdata-logo-png_seeklogo-439974.png)\n",
+        "height": 360,
+        "width": 480,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "d9fea401-7348-48f6-99ef-93be72d9eaa2",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Profile Extraction Task\n\n## Objective\nAnalyze the provided LinkedIn content and extract it into JSON Profile as mentioned below within the <profile_example>\n\n<profile_content>\n{{ $json.body }}\n</profile_content>\n\n## Instructions\n1. Review the LinkedIn content provided in the section above\n2. Extract all relevant information from the profile\n3. Structure the extracted data according to the JSON LinkedIN profile schema format\n4. Include all key sections typically found in profile (personal details, work experience, education, skills, etc.)\n5. Ensure the output follows valid JSON format with appropriate nesting and formatting\n\nYour output should be a complete, well-structured JSON Resume as specified in the below output.\n\n{\n  \"basics\": {\n    \"name\": \"John Doe\",\n    \"label\": \"Programmer\",\n    \"image\": \"\",\n    \"email\": \"john@gmail.com\",\n    \"phone\": \"(912) 555-4321\",\n    \"url\": \"https://johndoe.com\",\n    \"summary\": \"A summary of John Doe…\",\n    \"location\": {\n      \"address\": \"2712 Broadway St\",\n      \"postalCode\": \"CA 94115\",\n      \"city\": \"San Francisco\",\n      \"countryCode\": \"US\",\n      \"region\": \"California\"\n    },\n    \"profiles\": [{\n      \"network\": \"Twitter\",\n      \"username\": \"john\",\n      \"url\": \"https://twitter.com/john\"\n    }]\n  },\n  \"work\": [{\n    \"name\": \"Company\",\n    \"position\": \"President\",\n    \"url\": \"https://company.com\",\n    \"startDate\": \"2013-01-01\",\n    \"endDate\": \"2014-01-01\",\n    \"summary\": \"Description…\",\n    \"highlights\": [\n      \"Started the company\"\n    ]\n  }],\n  \"volunteer\": [{\n    \"organization\": \"Organization\",\n    \"position\": \"Volunteer\",\n    \"url\": \"https://organization.com/\",\n    \"startDate\": \"2012-01-01\",\n    \"endDate\": \"2013-01-01\",\n    \"summary\": \"Description…\",\n    \"highlights\": [\n      \"Awarded 'Volunteer of the Month'\"\n    ]\n  }],\n  \"education\": [{\n    \"institution\": \"University\",\n    \"url\": \"https://institution.com/\",\n    \"area\": \"Software Development\",\n    \"studyType\": \"Bachelor\",\n    \"startDate\": \"2011-01-01\",\n    \"endDate\": \"2013-01-01\",\n    \"score\": \"4.0\",\n    \"courses\": [\n      \"DB1101 - Basic SQL\"\n    ]\n  }],\n  \"awards\": [{\n    \"title\": \"Award\",\n    \"date\": \"2014-11-01\",\n    \"awarder\": \"Company\",\n    \"summary\": \"There is no spoon.\"\n  }],\n  \"certificates\": [{\n    \"name\": \"Certificate\",\n    \"date\": \"2021-11-07\",\n    \"issuer\": \"Company\",\n    \"url\": \"https://certificate.com\"\n  }],\n  \"publications\": [{\n    \"name\": \"Publication\",\n    \"publisher\": \"Company\",\n    \"releaseDate\": \"2014-10-01\",\n    \"url\": \"https://publication.com\",\n    \"summary\": \"Description…\"\n  }],\n  \"skills\": [{\n    \"name\": \"Web Development\",\n    \"level\": \"Master\",\n    \"keywords\": [\n      \"HTML\",\n      \"CSS\",\n      \"JavaScript\"\n    ]\n  }],\n  \"languages\": [{\n    \"language\": \"English\",\n    \"fluency\": \"Native speaker\"\n  }],\n  \"interests\": [{\n    \"name\": \"Wildlife\",\n    \"keywords\": [\n      \"Ferrets\",\n      \"Unicorns\"\n    ]\n  }],\n  \"references\": [{\n    \"name\": \"Jane Doe\",\n    \"reference\": \"Reference…\"\n  }],\n  \"projects\": [{\n    \"name\": \"Project\",\n    \"startDate\": \"2019-01-01\",\n    \"endDate\": \"2021-01-01\",\n    \"description\": \"Description...\",\n    \"highlights\": [\n      \"Won award at AIHacks 2016\"\n    ],\n    \"url\": \"https://project.com/\"\n  }]\n}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an expert resume parser"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1456,
+        640
+      ],
+      "id": "590020c6-960d-4684-9277-ee5a1496f53d",
+      "name": "Structured Profile Data Extraction"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following LinkedIn profile text and estimate the Big Five personality traits \n(Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism) on a scale of 0–100. \n\nImportant - Output the JSON only response.\n\nProvide reasoning for each score.\n\n<profile_content>\n{{ $json.body }}\n</profile_content>\n\nHere's the Big 5 example:\n\n<big5_example>\n{\n  \"Openness\": 82,\n  \"Conscientiousness\": 70,\n  \"Extraversion\": 65,\n  \"Agreeableness\": 75,\n  \"Neuroticism\": 40,\n  \"Insights\": {\n    \"Strengths\": [\"High creativity\", \"Strong discipline\"],\n    \"Risks\": [\"May avoid risk-taking\"],\n    \"WorkStyle\": \"Collaborative, structured, moderately outgoing\"\n  }\n}\n</big5_example>",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an expert resume parser"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1456,
+        1152
+      ],
+      "id": "9642c6cf-9759-4135-b644-bef6b62ce784",
+      "name": "Big 5 Analysis"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        1376
+      ],
+      "id": "7ff65a79-657c-49aa-aff7-2b9a86ce6404",
+      "name": "Google Gemini Chat Model for Big 5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: Gemini raw response text\n// Output: Clean JSON string without ```json fences\n\nconst input = $input.first().json.text || \"\";\n\n// Remove markdown fences like ```json ... ```\nlet cleaned = input\n  .replace(/```json/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// Try parsing to validate JSON\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  throw new Error(\"Failed to parse Gemini response as JSON. Raw: \" + cleaned);\n}\n\nreturn [{ json: parsed }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        752
+      ],
+      "id": "4314cf1e-379e-493a-91ca-e37826a954fa",
+      "name": "Sanitize Profile JSON"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: Gemini raw response text\n// Output: Clean JSON string without ```json fences\n\nconst input = $input.first().json.text || \"\";\n\n// Remove markdown fences like ```json ... ```\nlet cleaned = input\n  .replace(/```json/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// Try parsing to validate JSON\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  throw new Error(\"Failed to parse Gemini response as JSON. Raw: \" + cleaned);\n}\n\nreturn [{ json: parsed }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        1152
+      ],
+      "id": "5ef3f8ec-8240-42e5-830e-4276ecf01c96",
+      "name": "Sanitize Big 5 JSON"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# AI Agent Task Specification\n\nYou are an AI Agent tasked with performing the following data extraction operations. Make sure to use the right tools for operating the tasks.\n\n## Tasks\n\n### Task 1 - LinkedIn Data Extraction\n- Use the Bright Data Extractor Web Unlocker to scrape content from the provided URL: {{ $json.url }}. Perform this task only if the url is not null or empty or undefined.\n\n### Task 2 - Google Search Analysis\n- Perform a Google Search engine request using the following URL:\n  https://www.google.com/search?q={{ encodeURI($json.name) }}\n\n## Output Requirements\nPerform detailed analysis with the data extraction.\n\n## Important Notes\n- Do not include your own thoughts or responses\n- Provide the detailed human readable output\n- If there is an issue with the Bright Data extrcation with the Status code not equal to 200. Just return an empty response.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        2992,
+        928
+      ],
+      "id": "14ddb7c9-6963-40c5-bf6c-12bcf22ea69b",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2704,
+        1040
+      ],
+      "id": "48dbffdd-c27c-4ad6-bcd8-7a8564f722a5",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "zone": {
+          "__rl": true,
+          "mode": "list",
+          "value": "web_unlocker1"
+        },
+        "country": {
+          "__rl": true,
+          "mode": "list",
+          "value": "us"
+        },
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "format": "json",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightDataTool",
+      "typeVersion": 1,
+      "position": [
+        3056,
+        1152
+      ],
+      "id": "87ad3668-2e49-4839-a434-44cba9b8762a",
+      "name": "Bright Data Search Engine Data Extractor",
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        1152
+      ],
+      "id": "26079ea7-9f4b-4c61-bb5d-010e173e0469",
+      "name": "Google Gemini Chat Model for the AI Agent",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1HfniqGI5ieyJZk8munJjetgG0stO8eICIE_TjmZa8fE",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Intelligence Engine",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1HfniqGI5ieyJZk8munJjetgG0stO8eICIE_TjmZa8fE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1HfniqGI5ieyJZk8munJjetgG0stO8eICIE_TjmZa8fE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "output"
+          ],
+          "schema": [
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        3392,
+        1136
+      ],
+      "id": "3db94ca0-84f2-42fb-ab20-f370f9306c88",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Zjoxh2BUZ6VXGQhA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        288,
+        976
+      ],
+      "id": "95ad18fd-fe64-4f15-97f3-5507ad04ba67",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "=Extract the LinkedIn URL from the provided content  {{ $json.chatInput }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "url",
+              "description": "LinkedIn URL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        752
+      ],
+      "id": "f56b3212-2433-4c6a-afeb-25d774201285",
+      "name": "Extract the LinkedIn URL",
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2032,
+        944
+      ],
+      "id": "d023aa65-a92f-47c9-a43a-87de5632b7c4",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "zone": {
+          "__rl": true,
+          "mode": "list",
+          "value": "web_unlocker1"
+        },
+        "country": {
+          "__rl": true,
+          "mode": "list",
+          "value": "us"
+        },
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "format": "json",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightDataTool",
+      "typeVersion": 1,
+      "position": [
+        3184,
+        1152
+      ],
+      "id": "e128cf23-3a26-48f8-94f2-5ad92f744e85",
+      "name": "Bright Data URL based Web Data Extractor",
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Sanitize Profile JSON').first().json.projects"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        1040
+      ],
+      "id": "2646922c-0018-44e6-8a9c-aab1333906bc",
+      "name": "Extract Projects"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2256,
+        944
+      ],
+      "id": "571b0927-f225-4500-83b4-bae96169bead",
+      "name": "Aggregate the Result"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -16,
+        752
+      ],
+      "id": "7ca5b74d-9d21-4b1d-bb7b-c4af209f0bd0",
+      "name": "When chat message received",
+      "webhookId": "7965740f-af25-4929-ae93-01cfeaf66058"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.data.toJsonString() }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        2480,
+        848
+      ],
+      "id": "7aac5220-2692-4bd0-8ec5-3edd54e53f8b",
+      "name": "Respond to Chat"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        3392,
+        880
+      ],
+      "id": "23488b41-aa23-4f3b-a459-11a1e928a4c8",
+      "name": "Respond to Chat within Loop"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.data.toJsonString() }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        368
+      ],
+      "id": "fba7c1bc-e7d9-4aba-b2b1-d08c2f123fee",
+      "name": "Respond to Chat for Status 502"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Set Input Fields": {
+      "main": [
+        [
+          {
+            "node": "Access and extract data from a specific URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Access and extract data from a specific URL": {
+      "main": [
+        [
+          {
+            "node": "Set the Scraped Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set the Scraped Response": {
+      "main": [
+        [
+          {
+            "node": "If status code <> 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If status code <> 200": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat for Status 502",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Structured Profile Data Extraction",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Big 5 Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Profile Data Extraction",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Profile Data Extraction": {
+      "main": [
+        [
+          {
+            "node": "Sanitize Profile JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for Big 5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Big 5 Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Big 5 Analysis": {
+      "main": [
+        [
+          {
+            "node": "Sanitize Big 5 JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize Profile JSON": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize Big 5 JSON": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bright Data Search Engine Data Extractor": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Chat within Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for the AI Agent": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract the LinkedIn URL",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract the LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "Set Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate the Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bright Data URL based Web Data Extractor": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Projects": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Extract the LinkedIn URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate the Result": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Chat": {
+      "main": [
+        []
+      ]
+    },
+    "Respond to Chat for Status 502": {
+      "main": [
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fadb5a3b-e862-4561-9748-f25714fa17fe",
+  "meta": {
+    "instanceId": "885b4fb4a6a9c2cb5621429a7b972df0d05bb724c20ac7dac7171b62f1c7ef40"
+  },
+  "id": "pfxdt1vmhUdEssjK",
+  "tags": [
+    {
+      "createdAt": "2025-04-09T01:31:00.558Z",
+      "updatedAt": "2025-04-09T01:31:00.558Z",
+      "id": "Kujft2FOjmOVQAmJ",
+      "name": "Engineering"
+    },
+    {
+      "createdAt": "2025-04-13T15:23:40.462Z",
+      "updatedAt": "2025-04-13T15:23:40.462Z",
+      "id": "ZOwtAMLepQaGW76t",
+      "name": "Building Blocks"
+    },
+    {
+      "createdAt": "2025-04-13T05:38:08.053Z",
+      "updatedAt": "2025-04-13T05:38:08.053Z",
+      "id": "ddPkw7Hg5dZhQu2w",
+      "name": "AI"
+    }
+  ]
+}
