@@ -1,0 +1,742 @@
+{
+  "name": "BrightData Recruit Intelligence with Google, Bing, DuckDuckGo + n8n + Google Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1152,
+        -1184
+      ],
+      "id": "d6945958-7e13-4b06-be57-8259fa8db5cd",
+      "name": "When chat message received",
+      "webhookId": "939bb140-b1ca-4d52-8cad-5d29dab4254e"
+    },
+    {
+      "parameters": {
+        "zone": {
+          "__rl": true,
+          "mode": "list",
+          "value": "web_unlocker1"
+        },
+        "country": {
+          "__rl": true,
+          "mode": "list",
+          "value": "us"
+        },
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightDataTool",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -1216
+      ],
+      "id": "c1416e72-4021-4a99-b891-c55af1d0e8d0",
+      "name": "Access and extract data from a specific URL in BrightData",
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f5b7e10d-bcd8-439c-8e84-ba4af11f2cd2",
+              "name": "search",
+              "value": "={{ $json.output.search }}",
+              "type": "string"
+            },
+            {
+              "id": "3a0bcec2-ec6d-457f-87a5-b73f4d826b2a",
+              "name": "zone",
+              "value": "web_unlocker1",
+              "type": "string"
+            },
+            {
+              "id": "b1b1a771-bc42-4f9c-adaf-a2882a42ed5b",
+              "name": "start",
+              "value": "10",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        -1344
+      ],
+      "id": "10e9cef5-8e6f-47a0-aa9b-fa93c5c9da62",
+      "name": "Set input fields for chat"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -1216
+      ],
+      "id": "e7b745ca-7500-4f34-9dc3-fa5c33dbe5a4",
+      "name": "Google Gemini Chat Model for AI Agent",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -1216
+      ],
+      "id": "66b3bb21-869a-47d2-8f7e-cea7913b9cdf",
+      "name": "Google Gemini Chat Model for X Ray Builder for Chat",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Chat Input \n\n### Candidate Search\n\nGoogle Search for Candidates with 5+yrs of experience in Python with the Bangalore location. Get me their LinkedIn profiles\n\n### Company Details Extraction\n\nExtract company details https://il.linkedin.com/company/ibm",
+        "height": 320,
+        "width": 528
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        -1568
+      ],
+      "id": "69a18cfb-4edd-41a3-bb93-238153201162",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "f5deab49-ea1c-456b-b61a-5458adf991a5",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ready"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "76124b42-2988-4a24-841c-332961ebcb31",
+      "name": "Check if Batch Ready",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        576,
+        -1040
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "resource": "webScrapper",
+        "operation": "triggerCollectionByUrl",
+        "dataset_id": {
+          "__rl": true,
+          "value": "gd_l1vikfnt1wgvvqz95w",
+          "mode": "list",
+          "cachedResultName": "LinkedIn company information"
+        },
+        "urls": "=[{\"url\":\"{{ $json.url }}\"}]",
+        "requestOptions": {}
+      },
+      "id": "acf3cf02-3ee8-4be6-9791-17b3e80bf850",
+      "name": "Bright Data Company Data Extraction",
+      "type": "@brightdata/n8n-nodes-brightdata.brightData",
+      "position": [
+        -64,
+        -1040
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "webScrapper",
+        "operation": "monitorProgressSnapshot",
+        "snapshot_id": "={{ $json.snapshot_id }}",
+        "requestOptions": {}
+      },
+      "id": "ef4edd65-42ad-4ce4-a1ef-19842d08f35d",
+      "name": "Check for Snapshot Status",
+      "type": "@brightdata/n8n-nodes-brightdata.brightData",
+      "position": [
+        288,
+        -1040
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0ac91db2-9848-40d4-b942-cd7288597ded",
+              "name": "url",
+              "value": "={{ $json.output.url }}",
+              "type": "string"
+            },
+            {
+              "id": "3a0bcec2-ec6d-457f-87a5-b73f4d826b2a",
+              "name": "zone",
+              "value": "web_unlocker1",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        -1040
+      ],
+      "id": "e359d5b2-3c9d-4201-a811-fcfe78001215",
+      "name": "Set the Input fields"
+    },
+    {
+      "parameters": {
+        "resource": "webScrapper",
+        "operation": "downloadSnapshot",
+        "snapshot_id": "={{ $json.snapshot_id }}",
+        "requestOptions": {}
+      },
+      "id": "879e0db4-9e2d-4023-9152-f924530d4960",
+      "name": "Download Snapshot",
+      "type": "@brightdata/n8n-nodes-brightdata.brightData",
+      "position": [
+        800,
+        -1136
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert technical sourcer. Your task is to convert natural language requests into Boolean X-Ray search strings for StackOverflow, Github and LinkedIn profiles using Google/Bing/DuckDuckGo.\n\nHere's the input query : {{ $json.search }}\n\nBased upon the user query or ask, construct the XRay search query targetting the search provider.\n\nHere are the rules to be followed for StackOverflow, Github and LinkedIn.\n\n### Important - Output only the XRay Search and do not output with your own thoughts or suggestions.\n\n### Rules for StackOverflow:\n\nAlways use site:stackoverflow.com/users.\n\nInclude skills in (\"skill1\" OR \"skill2\" OR ...).\n\nIf a name is provided, include it in the query.\n\nKeep location inside quotes if mentioned.\n\nOutput only the final search string.\n\nExample Conversions:\n\nInput:\nFind me Python and Django developers in Berlin.\n\nsite:stackoverflow.com/users (\"Python\" OR \"Django\") \"Berlin\"\n\nInput:\nLook for John Doe, full stack developer with Docker and React in London.\n\nsite:stackoverflow.com/users (\"John Doe\" OR \"Full Stack Developer\") (\"Docker\" OR \"React\") \"London\"\n\n### Rules for Github:\n\nAlways use site:github.com.\n\nIf you want only profiles (not repos), use site:github.com -inurl:repositories.\n\nInclude skills in (\"skill1\" OR \"skill2\" OR ...).\n\nIf a name is provided, include it in the query.\n\nKeep location inside quotes if mentioned.\n\nOutput only the final search string.\n\n### Rules for LinkedIn:\n\nAlways use site:linkedin.com/in.\n\nExclude jobs/recruiter/company pages using: -jobs -careers -recruiter.\n\nInclude job titles in (\"title1\" OR \"title2\").\n\nInclude skills in (\"skill1\" OR \"skill2\" OR ...).\n\nIf a name is provided, include it in the query.\n\nKeep location inside quotes if mentioned.\n\nOutput only the final search string.",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -128,
+        -1440
+      ],
+      "id": "cf3edb8b-f8f1-4aab-aa31-392ba00975b1",
+      "name": "X Ray Query Builder for Candidate Search",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent agent; you need to decide on the suitable search engines for scraping the data. Construct the URL for searching based upon the requested search engine\n\nUse the Bright Data tool for accomplishing the searches based upon the suitable search provider.\n\nYou need to select one out of many providers.\n\nFor Google Search, use https://www.google.com/search?q={{ encodeURI($json.text) }}\n\nFor Bing Search, use https://www.bing.com/search?q={{ encodeURI($json.text) }}\n\nFor DuckDuckGo Search, use https://duckduckgo.com/q={{ encodeURI($json.text) }}&ia=web\n\nOutput:\n\nParse the raw html and show the human readable search response",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        -1440
+      ],
+      "id": "110a920d-2ace-4e85-b23e-fa5d74aea122",
+      "name": "Candidate Search Agent"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        576,
+        -1344
+      ],
+      "id": "2fb4733f-63b3-4c26-9d04-5faa33e3fa99",
+      "name": "Respond to Candidate Search"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent agent; you need on whether the user is interested in performing the candidate search versus the look for company information. Output with the following information.\n\nIdentity the search type. It could be one of the following\n\n1. candidate_search\n2. company_lookup\n\nIf it's a company lookup, extract the URL with the company that the user is looking for.\n\nThe search property of the JSON object needs to be set with the chat input - {{ $json.chatInput }}\n\nURL is optional. It's not required for the candidate search.\n\nOutput in a structured JSON format.\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -928,
+        -1184
+      ],
+      "id": "2da52f92-640d-40e3-a0b0-619f227239c0",
+      "name": "Search Type Analysis",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -944,
+        -960
+      ],
+      "id": "56e28b37-054a-4afb-8294-027636be4be4",
+      "name": "Google Gemini Chat Model for AI Agent for Search Type",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "375138de-6b6e-4a43-a9da-ba91b13dabe7",
+              "leftValue": "={{ $json.output.type }}",
+              "rightValue": "candidate_search",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -576,
+        -1184
+      ],
+      "id": "c7c4dfaf-5c21-4e8f-933a-9efe487e5f6c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"type\": \"candidate_search|company_lookup\",\n\t\"url\": \"url\",\n    \"search\": \"search criteria\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -768,
+        -960
+      ],
+      "id": "96325755-d430-413f-a19e-2a384486043b",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "f5deab49-ea1c-456b-b61a-5458adf991a5",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "building"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "abb46371-f9fa-4696-8205-48b3dd010e60",
+      "name": "Check on Download Status",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1040,
+        -1136
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {},
+      "id": "951151eb-c0b7-4d45-8bc1-45854f86862d",
+      "name": "Wait 5 Seconds to complete the download",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        1280,
+        -1152
+      ],
+      "webhookId": "31ec9024-cef1-4995-82b2-d26360460782",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {},
+      "id": "d4524798-a6ae-4f59-be28-e22ee3a5fb5d",
+      "name": "Wait 5 Seconds to complete",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        800,
+        -944
+      ],
+      "webhookId": "31ec9024-cef1-4995-82b2-d26360460782",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.toJsonString() }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        -880
+      ],
+      "id": "49a25238-1599-4f66-a97f-68bd83eddd04",
+      "name": "Respond to Company Chat"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Search Type Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Access and extract data from a specific URL in BrightData": {
+      "ai_tool": [
+        [
+          {
+            "node": "Candidate Search Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set input fields for chat": {
+      "main": [
+        [
+          {
+            "node": "X Ray Query Builder for Candidate Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for AI Agent": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Candidate Search Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for X Ray Builder for Chat": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "X Ray Query Builder for Candidate Search",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Batch Ready": {
+      "main": [
+        [
+          {
+            "node": "Download Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 5 Seconds to complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bright Data Company Data Extraction": {
+      "main": [
+        [
+          {
+            "node": "Check for Snapshot Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Snapshot Status": {
+      "main": [
+        [
+          {
+            "node": "Check if Batch Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set the Input fields": {
+      "main": [
+        [
+          {
+            "node": "Bright Data Company Data Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Check on Download Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X Ray Query Builder for Candidate Search": {
+      "main": [
+        [
+          {
+            "node": "Candidate Search Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Candidate Search Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Candidate Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for AI Agent for Search Type": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Search Type Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Type Analysis": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Search Type Analysis",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Set input fields for chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set the Input fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check on Download Status": {
+      "main": [
+        [
+          {
+            "node": "Wait 5 Seconds to complete the download",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Company Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 5 Seconds to complete the download": {
+      "main": [
+        [
+          {
+            "node": "Download Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 5 Seconds to complete": {
+      "main": [
+        [
+          {
+            "node": "Check for Snapshot Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "742eb6d2-049d-4d1d-8446-25bbeb71b987",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "885b4fb4a6a9c2cb5621429a7b972df0d05bb724c20ac7dac7171b62f1c7ef40"
+  },
+  "id": "hlEp0bMjhepwVJGu",
+  "tags": [
+    {
+      "createdAt": "2025-04-09T01:31:00.558Z",
+      "updatedAt": "2025-04-09T01:31:00.558Z",
+      "id": "Kujft2FOjmOVQAmJ",
+      "name": "Engineering"
+    },
+    {
+      "createdAt": "2025-04-13T15:23:40.462Z",
+      "updatedAt": "2025-04-13T15:23:40.462Z",
+      "id": "ZOwtAMLepQaGW76t",
+      "name": "Building Blocks"
+    },
+    {
+      "createdAt": "2025-04-13T05:38:08.053Z",
+      "updatedAt": "2025-04-13T05:38:08.053Z",
+      "id": "ddPkw7Hg5dZhQu2w",
+      "name": "AI"
+    }
+  ]
+}
