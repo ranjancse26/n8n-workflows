@@ -1,0 +1,579 @@
+{
+  "name": "BrightData Company Deep Research Report with AI Agent, Google Search, Glassdoor and CrunchBase + Google Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "79978833-48f2-4a04-9b65-6506d9b08fb9",
+              "name": "company",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -848,
+        -608
+      ],
+      "id": "af106248-b748-46c6-8048-9fd6fe0ec691",
+      "name": "Set the Input Fields"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1072,
+        -608
+      ],
+      "id": "6caecb37-5705-4bd6-8b16-9ea7fa2a5a3f",
+      "name": "When chat message received",
+      "webhookId": "b016594d-ee0c-4170-bcfd-d78b7453234c"
+    },
+    {
+      "parameters": {
+        "resource": "webScrapper",
+        "dataset_id": {
+          "__rl": true,
+          "value": "gd_l1vijqt9jfj7olije",
+          "mode": "list",
+          "cachedResultName": "Crunchbase companies information"
+        },
+        "urls": "=[{\"url\":\"{{ $json.output.CrunchBaseUrl }}\"}] ",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightData",
+      "typeVersion": 1,
+      "position": [
+        128,
+        -608
+      ],
+      "id": "625f82d4-ccbb-422b-ba63-b96ffc93e854",
+      "name": "Extract Crunchbase Data",
+      "retryOnFail": true,
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "webScrapper",
+        "dataset_id": {
+          "__rl": true,
+          "value": "gd_l7j0bx501ockwldaqf",
+          "mode": "list",
+          "cachedResultName": "Glassdoor companies overview information"
+        },
+        "urls": "=[{\"url\":\"{{ $json.output.GlassdoorCompanyURL }}\"}] ",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightData",
+      "typeVersion": 1,
+      "position": [
+        128,
+        -800
+      ],
+      "id": "40c83943-38a5-4d85-b3c7-003b63c0ade8",
+      "name": "Extract Glassdoor Company Info",
+      "retryOnFail": true,
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "zone": {
+          "__rl": true,
+          "mode": "list",
+          "value": "web_unlocker1"
+        },
+        "country": {
+          "__rl": true,
+          "mode": "list",
+          "value": "us"
+        },
+        "url": "={{ $json.output.GlassdoorCompanyReviewURL }}",
+        "format": "json",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightData",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -320
+      ],
+      "id": "a7af1243-180f-44bf-810c-ee138fcc486e",
+      "name": "Extract Glassdoor Review",
+      "retryOnFail": true,
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output.deep_research }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        992,
+        -608
+      ],
+      "id": "12fada2e-e572-4ab5-8d90-65a32e2907ec",
+      "name": "Respond to Chat",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here's an example Bright Data search request - https://www.google.com/search?q={{ encodeURI($json.company) }}\n\nPerform a Bright Data Search request for each of the following tasks to get the URL.\n\nInitiate a Bright Data Search by company name {{ $json.company }} get the following\n\n1. Glassdoor Company URL\n2. Glassdoor Company Review URL\n3. CrunchBase Url\n\nReturn the response as JSON in the following format.\n\n{\n   \"GlassdoorCompanyURL\": \"Glassdoor Company URL\",\n   \"GlassdoorCompanyReviewURL\": \"Glassdoor Company Review URL\",\n   \"CrunchBaseUrl\": \"CrunchBase Url\"\n}\n\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -576,
+        -608
+      ],
+      "id": "7b53eae6-62c8-4acf-85fc-86051c8dd978",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "zone": {
+          "__rl": true,
+          "mode": "list",
+          "value": "web_unlocker1"
+        },
+        "country": {
+          "__rl": true,
+          "mode": "list",
+          "value": "us"
+        },
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "requestOptions": {}
+      },
+      "type": "@brightdata/n8n-nodes-brightdata.brightDataTool",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -352
+      ],
+      "id": "e05d3174-4d14-4c73-8b6c-71fa420d227f",
+      "name": "Access and extract data by performing a search",
+      "credentials": {
+        "brightdataApi": {
+          "id": "fzomgz4ndbLzHLlQ",
+          "name": "BrightData account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"GlassdoorCompanyURL\": {\n\t\t\t\"type\": \"string\"\n\t\t},\"GlassdoorCompanyReviewURL\": {\n\t\t\t\"type\": \"string\"\n        },\"CrunchBaseUrl\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n    }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -384,
+        -352
+      ],
+      "id": "8391e05e-2441-4f1f-8284-ace50fe1c5d2",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "text": "=Extract human readable content from the below. Make sure to output in a markdown format.\n\nHere's the content -  {{ $json.body }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "company_review",
+              "description": "Glassdoor Company Review",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        -320
+      ],
+      "id": "0ceea3d7-8608-4850-ae83-2d8930716e7a",
+      "name": "Human Readable Content Extraction",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "text": "=Build a deep research report based on the following content. Make sure to produce a markdown report.\n\nHere's the content -  {{ $json.toJsonString() }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "deep_research",
+              "description": "Deep Research",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        -608
+      ],
+      "id": "dbf1b1d5-d60f-4d77-9b06-afffc34c8e5e",
+      "name": "Deep Research Builder",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        416,
+        -624
+      ],
+      "id": "1508ce33-01b6-4bec-9949-82d4579e6e58",
+      "name": "Merge Responses"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -384
+      ],
+      "id": "2f116257-107c-4b1c-8d26-5c561b956521",
+      "name": "Google Gemini Chat Model for Deep Research",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -96
+      ],
+      "id": "46c871b9-2b5a-47fb-b216-b1f9da74c866",
+      "name": "Google Gemini Chat Model for Human Readable",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Chat Input \n\n### Example\n\nbrightdata\n",
+        "height": 320,
+        "width": 528
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1216,
+        -992
+      ],
+      "id": "f2a0faa1-02c5-429b-9800-73f2b750cef4",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Deep Research Builder",
+        "height": 528,
+        "width": 448,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -768
+      ],
+      "id": "cd8099cb-45c8-4f18-b849-17dff893b767",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## LLM Usages\n\nGoogle Gemini 2.5 Flash",
+        "height": 320,
+        "width": 528,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        -992
+      ],
+      "id": "180fb93a-c97e-48a6-be5b-6362f8b5b4af",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        -336
+      ],
+      "id": "a5d820df-3ce4-45e6-9fe2-27001498fb4e",
+      "name": "Google Gemini Chat Model for AI Agent",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YeO7dHZnuGBVQKVZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Set the Input Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Set the Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Crunchbase Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Responses",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Extract Glassdoor Company Info": {
+      "main": [
+        [
+          {
+            "node": "Merge Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Glassdoor Review": {
+      "main": [
+        [
+          {
+            "node": "Human Readable Content Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Access and extract data by performing a search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract Glassdoor Company Info",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Crunchbase Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Glassdoor Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Readable Content Extraction": {
+      "main": [
+        [
+          {
+            "node": "Merge Responses",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Deep Research Builder": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Responses": {
+      "main": [
+        [
+          {
+            "node": "Deep Research Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for Deep Research": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Deep Research Builder",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for Human Readable": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Human Readable Content Extraction",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model for AI Agent": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "30ee3cbb-c1b5-4f50-aff4-9f398e177cce",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "885b4fb4a6a9c2cb5621429a7b972df0d05bb724c20ac7dac7171b62f1c7ef40"
+  },
+  "id": "7ziGOUaAYSm8JqWt",
+  "tags": [
+    {
+      "createdAt": "2025-04-13T05:38:08.053Z",
+      "updatedAt": "2025-04-13T05:38:08.053Z",
+      "id": "ddPkw7Hg5dZhQu2w",
+      "name": "AI"
+    },
+    {
+      "createdAt": "2025-04-13T15:23:40.462Z",
+      "updatedAt": "2025-04-13T15:23:40.462Z",
+      "id": "ZOwtAMLepQaGW76t",
+      "name": "Building Blocks"
+    },
+    {
+      "createdAt": "2025-04-09T01:31:00.558Z",
+      "updatedAt": "2025-04-09T01:31:00.558Z",
+      "id": "Kujft2FOjmOVQAmJ",
+      "name": "Engineering"
+    },
+    {
+      "createdAt": "2025-04-03T15:37:19.686Z",
+      "updatedAt": "2025-04-03T15:37:19.686Z",
+      "id": "qpxJxOMCv2x7Op5c",
+      "name": "SERP"
+    }
+  ]
+}
