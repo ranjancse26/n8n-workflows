@@ -1,0 +1,417 @@
+{
+  "name": "Perform SERP AI Agent Search with Thordata + OpenAI GPT-4.1-mini",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -496,
+        -96
+      ],
+      "id": "69f9e7c7-58c6-48c3-b18e-b45fb30657ae",
+      "name": "When chat message received",
+      "webhookId": "e015fe50-2c3d-4a62-ac0a-e3df3d085546"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -96,
+        -96
+      ],
+      "id": "59dad1a8-3ec7-4fcf-b6e0-39ba4a5cfe2a",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        128
+      ],
+      "id": "284e47f7-ed29-4d75-abed-de5f4e4956e8",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "vPKynKbDzJ5ZU4cU",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "HTTP request using Bing Search",
+        "method": "POST",
+        "url": "https://scraperapi.thordata.com/request",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "bing"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', ``, 'string') }}"
+            },
+            {
+              "name": "json",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -208,
+        128
+      ],
+      "id": "89f5dcdc-967b-494d-b208-2604d33cf6d3",
+      "name": "Bing Search",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "m17YVh2yJY7Fl9Wx",
+          "name": "Thordata SERP Bearer Auth Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "HTTP request using Google Search",
+        "method": "POST",
+        "url": "https://scraperapi.thordata.com/request",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', ``, 'string') }}"
+            },
+            {
+              "name": "json",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        128
+      ],
+      "id": "cfbb71f8-0ca6-4d2e-a696-9f8ebc837d40",
+      "name": "Google Search",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "m17YVh2yJY7Fl9Wx",
+          "name": "Thordata SERP Bearer Auth Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "HTTP request using Yandex Search",
+        "method": "POST",
+        "url": "https://scraperapi.thordata.com/request",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "yandex"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', ``, 'string') }}"
+            },
+            {
+              "name": "json",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        128
+      ],
+      "id": "9d405b1b-e46e-4d00-b950-0736a34bc349",
+      "name": "Yandex Search",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "m17YVh2yJY7Fl9Wx",
+          "name": "Thordata SERP Bearer Auth Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "HTTP request using DuckDuckGo Search",
+        "method": "POST",
+        "url": "https://scraperapi.thordata.com/request",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "duckduckgo"
+            },
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', ``, 'string') }}"
+            },
+            {
+              "name": "json",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        128
+      ],
+      "id": "e93326c2-95eb-4d93-a89b-110056101204",
+      "name": "DuckDuckGo Search",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "m17YVh2yJY7Fl9Wx",
+          "name": "Thordata SERP Bearer Auth Account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        256
+      ],
+      "id": "f1bc9d4f-00b3-43d0-9cb4-cd2a9d0fad41",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "content": "![Logo](https://consumersiteimages.trustpilot.net/business-units/67b212598525b99cf90a59cc-198x149-1x.jpg)",
+        "width": 160,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -496
+      ],
+      "id": "e0e0db10-da88-47ad-9750-a89bf13656e4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## **Purpose**\n\nThis workflow builds an **AI-powered SERP research assistant** that performs intelligent, multi-engine searches via **Thordata** and uses **OpenAI GPT-4.1-mini** to analyze, summarize, and synthesize insights from search results.\n\nIt acts as a **smart conversational search agent**—capable of running searches, combining data, and generating structured summaries on demand.\n",
+        "height": 192,
+        "width": 688,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -320
+      ],
+      "id": "6cbdf7ba-c439-411c-8c1f-f3edf1ac83de",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "\n## **Workflow Summary**\n\n1️⃣ **Chat Trigger**\nInitiates the workflow when a query or prompt is received via chat.\n\n2️⃣ **LangChain AI Agent Node**\nCore reasoning unit that routes tasks, interacts with the SERP tools, and returns structured answers.\n\n3️⃣ **Thordata SERP API Nodes**\nPerforms real-time searches via multiple engines:\n\n* Google\n* Bing\n* Yandex\n* DuckDuckGo\n\n4️⃣ **OpenAI GPT-4.1-mini Node**\nProcesses the raw results and generates structured insights, keyword lists, summaries, or action recommendations.\n\n5️⃣ **Memory Buffer Node**\nMaintains short-term conversational memory for multi-turn interactions.\n\n6️⃣ **Output Node**\nReturns the summarized data as text, JSON, or directly to chat.\n",
+        "height": 576,
+        "width": 480,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -592
+      ],
+      "id": "f8524f29-98c3-418c-93e1-6aac89b8d4d0",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bing Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Yandex Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DuckDuckGo Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4ac22db8-27c9-483d-a12c-5b45579b7cd8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "885b4fb4a6a9c2cb5621429a7b972df0d05bb724c20ac7dac7171b62f1c7ef40"
+  },
+  "id": "8zQDA2k0XlZML0uF",
+  "tags": [
+    {
+      "createdAt": "2025-04-09T01:31:00.558Z",
+      "updatedAt": "2025-04-09T01:31:00.558Z",
+      "id": "Kujft2FOjmOVQAmJ",
+      "name": "Engineering"
+    },
+    {
+      "createdAt": "2025-04-13T05:38:08.053Z",
+      "updatedAt": "2025-04-13T05:38:08.053Z",
+      "id": "ddPkw7Hg5dZhQu2w",
+      "name": "AI"
+    },
+    {
+      "createdAt": "2025-04-03T15:37:19.686Z",
+      "updatedAt": "2025-04-03T15:37:19.686Z",
+      "id": "qpxJxOMCv2x7Op5c",
+      "name": "SERP"
+    }
+  ]
+}
