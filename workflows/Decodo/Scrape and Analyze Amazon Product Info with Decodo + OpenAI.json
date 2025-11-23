@@ -48,6 +48,7 @@
       ],
       "id": "657db23a-996b-43aa-b3cf-8148e1e6aaa5",
       "name": "Decodo Web scrape for Amazon Products",
+      "retryOnFail": true,
       "credentials": {
         "decodoApi": {
           "id": "7xLvINFuwxDiyBde",
@@ -157,7 +158,8 @@
         96
       ],
       "id": "dddc5c80-7161-4b0e-bc4a-146d207550a7",
-      "name": "Product Insights"
+      "name": "Product Insights",
+      "retryOnFail": true
     },
     {
       "parameters": {
@@ -180,7 +182,8 @@
         464
       ],
       "id": "a09fa319-7cae-4c50-8082-896fb2112634",
-      "name": "Product Descriptive Summarizer"
+      "name": "Product Descriptive Summarizer",
+      "retryOnFail": true
     },
     {
       "parameters": {
@@ -259,7 +262,8 @@
         832
       ],
       "id": "e8492c0a-3fce-4477-b1c6-e5138952026e",
-      "name": "Competitive Analysis"
+      "name": "Competitive Analysis",
+      "retryOnFail": true
     },
     {
       "parameters": {
@@ -632,7 +636,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "f67084ee-9c91-4a63-b9ab-de04f6498dde",
+  "versionId": "7b5a8b56-bf75-4772-809a-2b55bf35d641",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "885b4fb4a6a9c2cb5621429a7b972df0d05bb724c20ac7dac7171b62f1c7ef40"
