@@ -1,0 +1,320 @@
+{
+  "name": "Support Ticket Structured Data Extraction with Clocked.ai",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        -160
+      ],
+      "id": "820ab9bb-c8fe-450b-9fbf-7d9dca6cbb7f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "function generateGUID() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\n    const r = Math.random() * 16 | 0;\n    const v = c === 'x' ? r : (r & 0x3 | 0x8);\n    return v.toString(16);\n  });\n}\n\nfor (const item of $input.all()) {\n  item.json.guid = generateGUID();\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -160
+      ],
+      "id": "5957809a-e39c-403a-a0ef-4953d6898665",
+      "name": "Unique Id Generator"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0f3f66e6-0509-456a-9f0f-d12963bb4239",
+              "name": "Ticket",
+              "value": "Ticket: INC-59301\\nRequester: Dana Whitfield\\nEmail: dana@example.com\\nDevice: LAPTOP-204\\nThe VPN disconnects every ten minutes. Outlook also crashes on launch.\\nThe error message is: Authentication token expired.\\nRestarting the VPN client did not help. Reinstalling Outlook did not help.\\nAssigned engineer: Priya Raman\\nPlease call tomorrow afternoon.\\nUpdate, 14:20: Dana confirms the affected device is LAPTOP-207, not LAPTOP-204. Priya remains assigned. No restoration estimate has been provided.",
+              "type": "string"
+            },
+            {
+              "id": "2971c621-2434-4a6c-8006-05d65f1739b6",
+              "name": "JSON Extract",
+              "value": "{     \"requester\": {       \"description\": \"The requester's full name\"     },     \"ticket_id\": \"The ticket identifier\",     \"email\": \"The requester's email address\",     \"device\": \"The corrected, currently affected device identifier in the latest update\",     \"assigned_engineer\": \"The assigned engineer's full name\",     \"error_message\": {       \"description\": \"The exact error message displayed\"     },     \"affected_applications\": {       \"description\": \"The applications or clients reported as malfunctioning\",       \"list\": true     },     \"attempted_fixes\": {       \"description\": \"The troubleshooting actions already attempted\",       \"list\": true     },     \"callback_time\": {       \"description\": \"The requested callback time exactly as written\"     },     \"restoration_estimate\": \"An explicit date or time by which service will be restored. Return nothing when the source only says that no estimate is available.\"   }",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        -160
+      ],
+      "id": "951cf02d-1a23-4376-bfc6-22d6c88a7ba5",
+      "name": "Support Ticket Input + JSON schema"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://clocked.rezolve.ai/clocked/extract",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $json.guid }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{ $json.Ticket }}\",\n  \"fields\": {{ $json['JSON Extract'] }}\n} ",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        288,
+        -160
+      ],
+      "id": "5a9178db-34fa-481c-82ba-65aea4af939e",
+      "name": "Clocked.ai Ticket Structured Data Extractor",
+      "retryOnFail": true,
+      "alwaysOutputData": false,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "AS4K1kcSTHOf49sW",
+          "name": "ClockedAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "\n\n![Resolve.ai](https://www.rezolve.ai/brand/rezolve-wordmark-light.svg)",
+        "height": 96,
+        "width": 192,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -432,
+        -400
+      ],
+      "typeVersion": 1,
+      "id": "66502568-64a7-441e-b2ae-7cf96f6f810c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "fileName": "C:\\n8n\\data\\ticket_structured_data.json",
+        "options": {}
+      },
+      "name": "Write Binary File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "position": [
+        688,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "43fe4d77-a0e8-4a85-909b-e3c727821bdd"
+    },
+    {
+      "parameters": {
+        "functionCode": "items[0].binary = {\n  data: {\n    data: new Buffer(JSON.stringify(items[0].json, null, 2)).toString('base64')\n  }\n};\nreturn items;"
+      },
+      "name": "Convert To Binary",
+      "type": "n8n-nodes-base.function",
+      "position": [
+        496,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "a023e96e-40c4-497b-8bc1-9154b67a9133"
+    },
+    {
+      "parameters": {
+        "content": "## Support Ticket Structured Data Extraction with Clocked.ai\n\n### How it works\n\nThis workflow manually processes a support ticket using Clocked.ai to extract structured information. It generates a unique request ID, sends the ticket and extraction schema to the Clocked.ai API, converts the response to binary, and writes the output to a file.\n\n### Setup steps\n\n- Configure the support ticket text and JSON extraction schema.\n- Set up Clocked.ai API authentication and the POST endpoint: `https://clocked.rezolve.ai/clocked/extract`.\n- Ensure the unique ID generator provides an idempotency key for each request.\n- Configure the binary conversion and output file path.\n- Execute the workflow and verify the extracted data and saved file.\n\n### Customization\n\nModify the extraction schema to capture ticket details, affected applications, troubleshooting steps, and callback requirements. Add validation, error handling, human review, or ticketing system integration as needed.",
+        "height": 672,
+        "width": 448,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1104,
+        -624
+      ],
+      "typeVersion": 1,
+      "id": "13aec8bb-7f81-4b25-ab47-5cbe1f0a6ed4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preserve the source verbatim and normalize only the working copy.\nfor (const item of $input.all()) {\n  const j = item.json;\n  const original = typeof j.Ticket === 'string' ? j.Ticket : JSON.stringify(j.Ticket ?? j);\n  let schema = j['JSON Extract'] ?? {};\n  if (typeof schema === 'string') {\n    try { schema = JSON.parse(schema); }\n    catch (e) { throw new Error('JSON Extract is not valid JSON: ' + e.message); }\n  }\n  if (!original.trim()) throw new Error('Ticket source is empty');\n  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) throw new Error('JSON Extract must be a JSON object');\n  j.original_source = original;\n  j.normalized_text = original.replace(/\\r\\n/g, '\\n').replace(/[\\t ]+/g, ' ').trim();\n  j.extraction_schema = schema;\n  j.received_at = new Date().toISOString();\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        -160
+      ],
+      "id": "75041c9e-ea43-46ec-9a61-cc21ad94fea4",
+      "name": "Normalize Input + Preserve Original"
+    },
+    {
+      "parameters": {
+        "content": "## Manual Input + Normalization\n\nProvide the support ticket text and extraction rules. Normalize the input while preserving the original ticket content for traceability.",
+        "height": 336,
+        "width": 464,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -288
+      ],
+      "id": "18daf7d4-09f6-472d-b045-380c96dcd40f",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Clocked Extract\n\nExtract structured ticket details using https://clocked.rezolve.ai/extract ",
+        "height": 336,
+        "width": 384,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        48,
+        -288
+      ],
+      "id": "52232137-4f8a-495b-b303-cb9b5225e040",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Export Data Handling\n\nConvert the JSON response the Binary and persist the same on disk",
+        "height": 336,
+        "width": 384,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -288
+      ],
+      "id": "39306e2d-510b-40de-8d76-9c15791e08ea",
+      "name": "Sticky Note6"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Support Ticket Input + JSON schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unique Id Generator": {
+      "main": [
+        [
+          {
+            "node": "Clocked.ai Ticket Structured Data Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Support Ticket Input + JSON schema": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input + Preserve Original",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clocked.ai Ticket Structured Data Extractor": {
+      "main": [
+        [
+          {
+            "node": "Convert To Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert To Binary": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input + Preserve Original": {
+      "main": [
+        [
+          {
+            "node": "Unique Id Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "f06028fe-c992-4e7b-9501-cf2b64199057",
+  "meta": {
+    "instanceId": "0cff407a71a27fe4567174d437c17b375e2be185280e462f09b3459f6ab113d8"
+  },
+  "id": "jC1W2_fqWdr60Ughgd25R",
+  "tags": [
+    {
+      "updatedAt": "2026-10-17T15:54:36.100Z",
+      "createdAt": "2026-10-17T15:54:36.100Z",
+      "id": "iJ8ktiM77XyU8PzD",
+      "name": "AI"
+    },
+    {
+      "updatedAt": "2026-10-17T15:54:42.366Z",
+      "createdAt": "2026-10-17T15:54:42.366Z",
+      "id": "xKxOTkQoFJBoRGwJ",
+      "name": "System One"
+    },
+    {
+      "updatedAt": "2026-10-17T15:54:30.234Z",
+      "createdAt": "2026-10-17T15:54:30.234Z",
+      "id": "zlJBXETUQ5Faw4Ih",
+      "name": "Unstructured Data"
+    }
+  ]
+}

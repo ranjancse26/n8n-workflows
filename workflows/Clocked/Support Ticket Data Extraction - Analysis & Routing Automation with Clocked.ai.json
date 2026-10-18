@@ -1,0 +1,833 @@
+{
+  "name": "Support Ticket Data Extraction - Analysis & Routing Automation with Clocked.ai",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1968,
+        -1360
+      ],
+      "id": "fca80ee2-6aad-4b37-8fd3-0074f4ac77ca",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0f3f66e6-0509-456a-9f0f-d12963bb4239",
+              "name": "Ticket",
+              "value": "Ticket: INC-59301\\nRequester: Dana Whitfield\\nEmail: dana@example.com\\nDevice: LAPTOP-204\\nThe VPN disconnects every ten minutes. Outlook also crashes on launch.\\nThe error message is: Authentication token expired.\\nRestarting the VPN client did not help. Reinstalling Outlook did not help.\\nAssigned engineer: Priya Raman\\nPlease call tomorrow afternoon.\\nUpdate, 14:20: Dana confirms the affected device is LAPTOP-207, not LAPTOP-204. Priya remains assigned. No restoration estimate has been provided.",
+              "type": "string"
+            },
+            {
+              "id": "2971c621-2434-4a6c-8006-05d65f1739b6",
+              "name": "JSON Extract",
+              "value": "{     \"requester\": {       \"description\": \"The requester's full name\"     },     \"ticket_id\": \"The ticket identifier\",     \"email\": \"The requester's email address\",     \"device\": \"The corrected, currently affected device identifier in the latest update\",     \"assigned_engineer\": \"The assigned engineer's full name\",     \"error_message\": {       \"description\": \"The exact error message displayed\"     },     \"affected_applications\": {       \"description\": \"The applications or clients reported as malfunctioning\",       \"list\": true     },     \"attempted_fixes\": {       \"description\": \"The troubleshooting actions already attempted\",       \"list\": true     },     \"callback_time\": {       \"description\": \"The requested callback time exactly as written\"     },     \"restoration_estimate\": \"An explicit date or time by which service will be restored. Return nothing when the source only says that no estimate is available.\"   }",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1744,
+        -1360
+      ],
+      "id": "22825684-1019-4ffc-b9bf-c116b81e3c64",
+      "name": "Support Ticket Input with Extractor Rules"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preserve the source verbatim and normalize only the working copy.\nfor (const item of $input.all()) {\n  const j = item.json;\n  const original = typeof j.Ticket === 'string' ? j.Ticket : JSON.stringify(j.Ticket ?? j);\n  let schema = j['JSON Extract'] ?? {};\n  if (typeof schema === 'string') {\n    try { schema = JSON.parse(schema); }\n    catch (e) { throw new Error('JSON Extract is not valid JSON: ' + e.message); }\n  }\n  if (!original.trim()) throw new Error('Ticket source is empty');\n  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) throw new Error('JSON Extract must be a JSON object');\n  j.original_source = original;\n  j.normalized_text = original.replace(/\\r\\n/g, '\\n').replace(/[\\t ]+/g, ' ').trim();\n  j.extraction_schema = schema;\n  j.received_at = new Date().toISOString();\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        -1360
+      ],
+      "id": "593446ea-af72-4558-9e5c-b2a5a4ccca01",
+      "name": "Normalize Input + Preserve Original"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://clocked.rezolve.ai/clocked/extract",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $json.correlation_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { text: $json.normalized_text, fields: $json.extraction_schema } }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1072,
+        -1288
+      ],
+      "id": "218baa01-e3eb-45d4-b965-7533ebd6c9f6",
+      "name": "Clocked Extract",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "AS4K1kcSTHOf49sW",
+          "name": "ClockedAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -848,
+        -1360
+      ],
+      "id": "363c8e9b-871c-441b-82be-8f7809fbd3a7",
+      "name": "Merge Original + Extract Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\n\nconst REQUIRED_FIELDS = [\n  'requester',\n  'ticket_id',\n  'email',\n  'device',\n  'assigned_engineer',\n  'error_message',\n  'affected_applications',\n  'attempted_fixes',\n  'callback_time',\n];\n\nconst LIST_FIELDS = [\n  'affected_applications',\n  'attempted_fixes',\n];\n\nfor (const item of items) {\n  const j = item.json;\n\n  // Clocked Extract returns fields as:\n  // { requester: { value, confidence }, ... }\n  // Support both the actual \"fields\" format and a flat extraction object.\n  let raw =\n    j.extracted_data ??\n    j.extracted ??\n    j.fields ??\n    j.result ??\n    j.data ??\n    j.output;\n\n  if (typeof raw === 'string') {\n    try {\n      raw = JSON.parse(raw);\n    } catch {\n      j.extraction_error = 'Extraction response was not valid JSON';\n      raw = null;\n    }\n  }\n\n  // Unwrap common response wrappers if necessary.\n  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {\n    if (\n      raw.fields &&\n      typeof raw.fields === 'object' &&\n      !Array.isArray(raw.fields)\n    ) {\n      raw = raw.fields;\n    } else if (\n      raw.extracted_data &&\n      typeof raw.extracted_data === 'object' &&\n      !Array.isArray(raw.extracted_data)\n    ) {\n      raw = raw.extracted_data;\n    }\n  }\n\n  const missing = [];\n  const invalid = [];\n  const extracted = {};\n\n  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {\n    j.extraction_error =\n      j.extraction_error || 'No object-like extraction payload found';\n  } else {\n    for (const key of REQUIRED_FIELDS) {\n      const field = raw[key];\n\n      // Clocked fields are normally objects containing \"value\".\n      const value =\n        field &&\n        typeof field === 'object' &&\n        !Array.isArray(field) &&\n        Object.prototype.hasOwnProperty.call(field, 'value')\n          ? field.value\n          : field;\n\n      // Preserve legitimate optional values separately below.\n      if (\n        value === undefined ||\n        value === null ||\n        (typeof value === 'string' && value.trim() === '')\n      ) {\n        missing.push(key);\n        continue;\n      }\n\n      if (LIST_FIELDS.includes(key)) {\n        if (!Array.isArray(value)) {\n          invalid.push(`${key}_must_be_array`);\n          continue;\n        }\n\n        const cleaned = value.filter(\n          v => typeof v === 'string' && v.trim() !== ''\n        );\n\n        if (cleaned.length !== value.length) {\n          invalid.push(`${key}_contains_invalid_items`);\n        }\n\n        extracted[key] = cleaned;\n      } else {\n        if (typeof value !== 'string') {\n          invalid.push(`${key}_must_be_string`);\n          continue;\n        }\n\n        extracted[key] = value.trim();\n      }\n    }\n\n    // Validate email format.\n    if (\n      extracted.email &&\n      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(extracted.email)\n    ) {\n      invalid.push('email_invalid_format');\n    }\n\n    // Optional field: null is acceptable when no estimate exists.\n    const estimateField = raw.restoration_estimate;\n    const estimate =\n      estimateField &&\n      typeof estimateField === 'object' &&\n      !Array.isArray(estimateField) &&\n      Object.prototype.hasOwnProperty.call(estimateField, 'value')\n        ? estimateField.value\n        : estimateField;\n\n    extracted.restoration_estimate =\n      estimate === undefined || estimate === null ||\n      (typeof estimate === 'string' && estimate.trim() === '')\n        ? null\n        : estimate;\n\n    // Preserve field-level confidence for downstream review/auditing.\n    const fieldConfidence = {};\n\n    for (const [key, field] of Object.entries(raw)) {\n      if (\n        field &&\n        typeof field === 'object' &&\n        !Array.isArray(field) &&\n        typeof field.confidence === 'number'\n      ) {\n        fieldConfidence[key] = field.confidence;\n      }\n    }\n\n    j.extracted_fields = extracted;\n    j.extraction_confidence = fieldConfidence;\n  }\n\n  const valid =\n    !j.extraction_error &&\n    missing.length === 0 &&\n    invalid.length === 0;\n\n  j.extraction_validation = {\n    valid,\n    missing_fields: missing,\n    invalid_fields: invalid,\n  };\n\n  j.human_review_required = !valid;\n}\n\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        -1360
+      ],
+      "id": "b1e08f97-5a0d-48f6-b003-26676b085b89",
+      "name": "Parse + Validate Extraction"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        368,
+        -1328
+      ],
+      "id": "6dc43259-2644-48da-964b-a612a9105bc7",
+      "name": "Merge Decision + Ticket Context"
+    },
+    {
+      "parameters": {
+        "jsCode": "const MIN_CONFIDENCE = 0.85;\n\nfor (const item of $input.all()) {\n  const j = item.json;\n\n  let d =\n    j.decision_result ??\n    j.decision ??\n    j.result ??\n    j.data ??\n    j.output;\n\n  if (typeof d === 'string') {\n    try {\n      d = JSON.parse(d);\n    } catch (_) {\n      d = null;\n    }\n  }\n\n  // Support answers returned through different response structures.\n  const answers = d?.answers ?? d?.questions ?? d ?? {};\n\n  const categoryAnswer = answers.ticket_category;\n  const urgencyAnswer = answers.urgency;\n  const reviewAnswer = answers.requires_human_review;\n\n  const category =\n    typeof categoryAnswer === 'string'\n      ? categoryAnswer.trim() || null\n      : (\n          categoryAnswer?.value ??\n          categoryAnswer?.answer ??\n          categoryAnswer?.choice ??\n          null\n        );\n\n  const confidenceRaw =\n    categoryAnswer?.confidence ??\n    categoryAnswer?.probability ??\n    categoryAnswer?.score ??\n    d?.confidence;\n\n  const confidence =\n    typeof confidenceRaw === 'number'\n      ? confidenceRaw\n      : (\n          typeof confidenceRaw === 'string' &&\n          confidenceRaw.trim() !== ''\n            ? Number(confidenceRaw)\n            : null\n        );\n\n  const explicitReview =\n    reviewAnswer === 'yes' ||\n    reviewAnswer?.value === 'yes' ||\n    reviewAnswer?.answer === 'yes' ||\n    reviewAnswer?.choice === 'yes';\n\n  const hasConflict = Boolean(\n    j.extraction_validation?.valid === false ||\n    j.conflict_detected ||\n    j.extraction_error\n  );\n\n  const reasons = [];\n\n  if (j.extraction_validation?.valid !== true) {\n    reasons.push('extraction_validation_failed');\n  }\n\n  // Generic validation: no predefined category allowlist.\n  if (\n    typeof category !== 'string' ||\n    category.trim() === ''\n  ) {\n    reasons.push('category_missing');\n  }\n\n  if (\n    confidence === null ||\n    !Number.isFinite(confidence) ||\n    confidence < 0 ||\n    confidence > 1\n  ) {\n    reasons.push('confidence_missing_or_invalid');\n  } else if (confidence < MIN_CONFIDENCE) {\n    reasons.push('confidence_below_threshold');\n  }\n\n  if (explicitReview) {\n    reasons.push('model_requested_human_review');\n  }\n\n  if (hasConflict) {\n    reasons.push('conflicting_or_invalid_source_data');\n  }\n\n  const urgency =\n    typeof urgencyAnswer === 'string'\n      ? urgencyAnswer\n      : (\n          urgencyAnswer?.value ??\n          urgencyAnswer?.answer ??\n          urgencyAnswer?.choice ??\n          null\n        );\n\n  j.decision_summary = {\n    category,\n    urgency,\n    confidence,\n    threshold: MIN_CONFIDENCE,\n    human_review_required: reasons.length > 0,\n    review_reasons: [...new Set(reasons)],\n    raw_decision: d ?? null,\n  };\n\n  j.update_approved = reasons.length === 0;\n\n  j.audit_record = {\n    correlation_id: j.correlation_id,\n    ticket_id: j.extracted_fields?.ticket_id ?? null,\n    received_at: j.received_at,\n    processed_at: new Date().toISOString(),\n    extraction_valid: j.extraction_validation?.valid === true,\n    decision_category: category,\n    decision_confidence: confidence,\n    update_approved: j.update_approved,\n    review_reasons: j.decision_summary.review_reasons,\n  };\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        -1408
+      ],
+      "id": "413259cc-a300-49a3-98f5-024827f53811",
+      "name": "Evaluate Rules + Confidence Gate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cdfd6e28-aef6-426d-ac49-3f9b4f713314",
+              "leftValue": "={{ $json.update_approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        816,
+        -1408
+      ],
+      "id": "580f4f2b-15dd-41c3-9cc1-f19589ec10ff",
+      "name": "Update Approved?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "432eef7a-5b41-46c5-aeb1-7057ca7f751f",
+              "name": "review_status",
+              "value": "pending_human_review",
+              "type": "string"
+            },
+            {
+              "id": "4e8baf22-bc79-493e-aa37-137ab65297ab",
+              "name": "review_payload",
+              "value": "={{ { correlation_id: $json.correlation_id, source: $json.original_source, extraction: $json.extracted_fields, extraction_validation: $json.extraction_validation, decision: $json.decision_summary, audit: $json.audit_record } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        -1200
+      ],
+      "id": "3e9fe128-fd3f-424e-8c9b-9d81380fa742",
+      "name": "Human Review Queue - CONFIGURE",
+      "notesInFlow": true,
+      "notes": "Connect this output to your approved review queue (Jira/ServiceNow/Slack/email/database). Do not expose sensitive ticket text to unapproved channels."
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://YOUR-ITSM-INSTANCE.example/api/tickets/{{ $json.extracted_fields.ticket_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { category: $json.decision_summary.category, urgency: $json.decision_summary.urgency, extracted_fields: $json.extracted_fields, correlation_id: $json.correlation_id } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1040,
+        -1600
+      ],
+      "id": "5b681775-c62f-4462-9db7-75ed0b0f51af",
+      "name": "ITSM Update - CONFIGURE BEFORE USE",
+      "notesInFlow": true,
+      "disabled": true,
+      "notes": "Disabled placeholder. Replace URL, authentication, method, and body with your ticketing system API and credentials. Enable only after testing in a non-production environment."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "94bdf308-c24a-4c3c-a587-53f6a835594f",
+              "name": "audit_status",
+              "value": "approved_for_update",
+              "type": "string"
+            },
+            {
+              "id": "b778c1c4-bfdf-4b3d-996c-93fe74557036",
+              "name": "audit_record",
+              "value": "={{ $json.toJsonString() }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1264,
+        -1600
+      ],
+      "id": "92d2df99-e1c2-4dff-8f2d-8a239571a9c0",
+      "name": "Audit Record - Approved Path"
+    },
+    {
+      "parameters": {
+        "jsCode": "function uuid() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {\n    const r = Math.random() * 16 | 0;\n    return (c === 'x' ? r : (r & 3 | 8)).toString(16);\n  });\n}\nfor (const item of $input.all()) {\n  item.json.correlation_id = item.json.correlation_id || uuid();\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        -1360
+      ],
+      "id": "6b6168c3-cc3f-4448-a38b-7b7142a89b26",
+      "name": "Generate Correlation ID For Extract"
+    },
+    {
+      "parameters": {
+        "jsCode": "function uuid() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {\n    const r = Math.random() * 16 | 0;\n    return (c === 'x' ? r : (r & 3 | 8)).toString(16);\n  });\n}\nfor (const item of $input.all()) {\n  item.json.correlation_id = uuid();\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        -1408
+      ],
+      "id": "42660c06-7a32-4f3c-9612-9a413bc0a90a",
+      "name": "Generate Correlation ID For Decide"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://clocked.rezolve.ai/clocked/decide",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $json.correlation_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { state: { ticket_text: $json.normalized_text, extracted_fields: $json.extracted_fields }, questions: { ticket_category: { type: \"choice\", instructions: \"Choose the primary support category based only on the supplied ticket evidence.\", criteria: { network_vpn: \"VPN connectivity or network problems\", identity_authentication: \"Authentication or expired-token problems\", email_application: \"Outlook or email application problems\", hardware: \"Device or hardware problems\", other: \"Other or insufficient evidence\" } }, urgency: { type: \"choice\", instructions: \"Choose urgency based on the defined impact and evidence; do not invent an SLA.\", criteria: { routine: \"Routine; limited impact\", priority: \"Priority; repeated issue or material productivity impact\", urgent: \"Urgent; broad or severe impact\", critical: \"Critical; major outage or safety/security emergency\" } }, requires_human_review: { type: \"choice\", instructions: \"Choose yes if evidence conflicts, required fields are missing, or the result is uncertain.\", criteria: { yes: \"Human review required\", no: \"No human review required\" } } } } }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        144,
+        -1408
+      ],
+      "id": "d2a8c2c4-4718-4e82-aa91-1e0b68151f5c",
+      "name": "Clocked Decide",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "notesInFlow": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "AS4K1kcSTHOf49sW",
+          "name": "ClockedAI"
+        }
+      },
+      "notes": "IMPORTANT: Verify the exact Clocked Decide request schema, question types, response shape, and endpoint path against https://clocked.rezolve.ai/decide?view=api before enabling. The body here is an illustrative template, not verified API syntax."
+    },
+    {
+      "parameters": {
+        "functionCode": "items[0].binary = {\n  data: {\n    data: new Buffer(JSON.stringify(items[0].json, null, 2)).toString('base64')\n  }\n};\nreturn items;"
+      },
+      "name": "Convert To Binary - Human Review",
+      "type": "n8n-nodes-base.function",
+      "position": [
+        1488,
+        -1200
+      ],
+      "typeVersion": 1,
+      "id": "4b6e795f-759c-44d1-a49b-f49de0643646"
+    },
+    {
+      "parameters": {
+        "fileName": "C:\\n8n\\data\\ticket_structured_pending_human_review_data.json",
+        "options": {}
+      },
+      "name": "Write Binary File - Human Review",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "position": [
+        1712,
+        -1200
+      ],
+      "typeVersion": 1,
+      "id": "3240455f-7f14-4d7f-98b5-8e536c320e59"
+    },
+    {
+      "parameters": {
+        "functionCode": "items[0].binary = {\n  data: {\n    data: new Buffer(JSON.stringify(items[0].json, null, 2)).toString('base64')\n  }\n};\nreturn items;"
+      },
+      "name": "Convert To Binary - Approved",
+      "type": "n8n-nodes-base.function",
+      "position": [
+        1488,
+        -1600
+      ],
+      "typeVersion": 1,
+      "id": "92918d15-81d6-43dc-941c-9b86f0fb6662"
+    },
+    {
+      "parameters": {
+        "fileName": "C:\\n8n\\data\\ticket_structured_approved_data.json",
+        "options": {}
+      },
+      "name": "Write Binary File - Approved",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "position": [
+        1712,
+        -1600
+      ],
+      "typeVersion": 1,
+      "id": "ea21f2dc-fca6-4730-b11d-660b35046ebd"
+    },
+    {
+      "parameters": {
+        "content": "\n\n![Resolve.ai](https://www.rezolve.ai/brand/rezolve-wordmark-light.svg)",
+        "height": 96,
+        "width": 192,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1824,
+        -1664
+      ],
+      "typeVersion": 1,
+      "id": "0dd492a1-daa7-40d8-91a4-f722e977bb72",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Support Ticket Data Extraction – Analysis & Routing Automation with Clocked.ai\n\n### How it works\n\nThis workflow extracts structured data from support tickets using Clocked.ai, validates the extracted fields, and evaluates ticket decisions using Clocked Decide. It applies confidence and business rules to determine whether a ticket can be approved for automated updates or requires human review. Both paths generate audit records and save their outputs to files.\n\n### Setup steps\n\n- Configure the support ticket input and extraction rules.\n- Set up Clocked.ai API credentials, extraction endpoint, and unique correlation IDs.\n- Configure extraction parsing, validation, and Clocked Decide inputs.\n- Review the business rules and confidence thresholds.\n- Configure the approved and human-review output paths, audit records, and file destinations.\n- Test both paths with valid, incomplete, and ambiguous tickets.\n\n### Customization\n\nAdjust extraction fields, decision criteria, confidence thresholds, and review rules. Connect the approved path to your ticketing system and configure a human-review destination for cases requiring manual intervention.",
+        "height": 672,
+        "width": 528,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2576,
+        -1760
+      ],
+      "id": "4aa9f81a-0626-4b07-83b3-ffcf13c52ff0",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Human Review Flow\n\nRoute tickets requiring manual intervention to a review queue, record the review audit data, and save the output for follow-up.",
+        "height": 320,
+        "width": 928,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        992,
+        -1328
+      ],
+      "id": "fb6faece-639c-4e01-9dde-f59c78353034",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Approved Flow\n\nApproved tickets, prepare the ITSM update, generate an audit record, and save the approved output. Configure the ITSM integration before enabling this path.",
+        "height": 368,
+        "width": 928,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        992,
+        -1712
+      ],
+      "id": "15d1984d-8169-4159-956d-5efc5451a621",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Manual Input + Normalization\n\nProvide the support ticket text and extraction rules. Normalize the input while preserving the original ticket content for traceability.",
+        "height": 464,
+        "width": 464,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        -1552
+      ],
+      "id": "c61736a8-c3d7-4254-90b2-97fe58caa304",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Clocked Extract and Merge\n\nExtract structured ticket details using Clocked Extract (https://clocked.rezolve.ai/extract) and merge the API response with the original input and correlation ID.",
+        "height": 464,
+        "width": 640,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        -1552
+      ],
+      "id": "38a65ebb-39b0-4ed9-8c76-2cf7563e4f51",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Clocked Decide and Merge\n\nUse Clocked Decide (https://clocked.rezolve.ai/decide) to evaluate the ticket based on the extracted data and context, then merge the decision with the ticket information.",
+        "height": 464,
+        "width": 736,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        -1552
+      ],
+      "id": "64c453b5-251a-4df4-9796-dbd471d3f4a4",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Parse & Validate\n\nParse the extraction results, validate required fields and data types, and flag missing or invalid information for review.",
+        "height": 464,
+        "width": 448,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        -1552
+      ],
+      "id": "0914e920-b475-420a-bdbf-7b226dae053f",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## Evaluate\n\nApply business rules and confidence thresholds to determine whether the ticket qualifies for automated processing or requires human review.",
+        "height": 464,
+        "width": 448,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -1552
+      ],
+      "id": "5bb6feb4-9e6b-43fd-b2e9-a87d8667234b",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "81939e58-76b1-4962-b78b-034166936b1d",
+              "name": "audit_status",
+              "value": "sent_to_human_review",
+              "type": "string"
+            },
+            {
+              "id": "3acf225d-4a6c-4c40-964d-7338a6fd94cb",
+              "name": "audit_record",
+              "value": "={{ $json.toJsonString() }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1264,
+        -1200
+      ],
+      "id": "8cec62e7-1182-4ae3-ade0-1ee5380ae7f9",
+      "name": "Audit Record - Review Path"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Support Ticket Input with Extractor Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Support Ticket Input with Extractor Rules": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input + Preserve Original",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input + Preserve Original": {
+      "main": [
+        [
+          {
+            "node": "Generate Correlation ID For Extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clocked Extract": {
+      "main": [
+        [
+          {
+            "node": "Merge Original + Extract Response",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Original + Extract Response": {
+      "main": [
+        [
+          {
+            "node": "Parse + Validate Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse + Validate Extraction": {
+      "main": [
+        [
+          {
+            "node": "Merge Decision + Ticket Context",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Correlation ID For Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Decision + Ticket Context": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Rules + Confidence Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Rules + Confidence Gate": {
+      "main": [
+        [
+          {
+            "node": "Update Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Approved?": {
+      "main": [
+        [
+          {
+            "node": "ITSM Update - CONFIGURE BEFORE USE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Human Review Queue - CONFIGURE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Review Queue - CONFIGURE": {
+      "main": [
+        [
+          {
+            "node": "Audit Record - Review Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ITSM Update - CONFIGURE BEFORE USE": {
+      "main": [
+        [
+          {
+            "node": "Audit Record - Approved Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Correlation ID For Extract": {
+      "main": [
+        [
+          {
+            "node": "Clocked Extract",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Original + Extract Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Correlation ID For Decide": {
+      "main": [
+        [
+          {
+            "node": "Clocked Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clocked Decide": {
+      "main": [
+        [
+          {
+            "node": "Merge Decision + Ticket Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Audit Record - Approved Path": {
+      "main": [
+        [
+          {
+            "node": "Convert To Binary - Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert To Binary - Human Review": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File - Human Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert To Binary - Approved": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File - Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Record - Review Path": {
+      "main": [
+        [
+          {
+            "node": "Convert To Binary - Human Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b30b0d0b-de1e-446b-9b53-9a05ea3b8a0d",
+  "meta": {
+    "instanceId": "0cff407a71a27fe4567174d437c17b375e2be185280e462f09b3459f6ab113d8"
+  },
+  "id": "eTEI8X29r6PLYL3HCQM3m",
+  "tags": [
+    {
+      "name": "AI",
+      "id": "iJ8ktiM77XyU8PzD",
+      "updatedAt": "2026-10-17T15:54:36.100Z",
+      "createdAt": "2026-10-17T15:54:36.100Z"
+    },
+    {
+      "name": "System One",
+      "id": "xKxOTkQoFJBoRGwJ",
+      "updatedAt": "2026-10-17T15:54:42.366Z",
+      "createdAt": "2026-10-17T15:54:42.366Z"
+    },
+    {
+      "name": "Unstructured Data",
+      "id": "zlJBXETUQ5Faw4Ih",
+      "updatedAt": "2026-10-17T15:54:30.234Z",
+      "createdAt": "2026-10-17T15:54:30.234Z"
+    }
+  ]
+}
