@@ -426,8 +426,8 @@
     },
     {
       "parameters": {
-        "content": "## Support Ticket Data Extraction – Analysis & Routing Automation with Clocked.ai\n\n### How it works\n\nThis workflow extracts structured data from support tickets using Clocked.ai, validates the extracted fields, and evaluates ticket decisions using Clocked Decide. It applies confidence and business rules to determine whether a ticket can be approved for automated updates or requires human review. Both paths generate audit records and save their outputs to files.\n\n### Setup steps\n\n- Configure the support ticket input and extraction rules.\n- Set up Clocked.ai API credentials, extraction endpoint, and unique correlation IDs.\n- Configure extraction parsing, validation, and Clocked Decide inputs.\n- Review the business rules and confidence thresholds.\n- Configure the approved and human-review output paths, audit records, and file destinations.\n- Test both paths with valid, incomplete, and ambiguous tickets.\n\n### Customization\n\nAdjust extraction fields, decision criteria, confidence thresholds, and review rules. Connect the approved path to your ticketing system and configure a human-review destination for cases requiring manual intervention.",
-        "height": 672,
+        "content": "## Support Ticket Data Extraction – Analysis & Routing Automation with Clocked (https://clocked.rezolve.ai/)\n\n### How it works\n\nThis workflow extracts structured data from support tickets using Clocked.ai, validates the extracted fields, and evaluates ticket decisions using Clocked Decide. It applies confidence and business rules to determine whether a ticket can be approved for automated updates or requires human review. Both paths generate audit records and save their outputs to files.\n\n### Setup steps\n\n- Configure the support ticket input and extraction rules.\n- Set up Clocked.ai API credentials, extraction endpoint, and unique correlation IDs.\n- Configure extraction parsing, validation, and Clocked Decide inputs.\n- Review the business rules and confidence thresholds.\n- Configure the approved and human-review output paths, audit records, and file destinations.\n- Test both paths with valid, incomplete, and ambiguous tickets.\n\n### Customization\n\nAdjust extraction fields, decision criteria, confidence thresholds, and review rules. Connect the approved path to your ticketing system and configure a human-review destination for cases requiring manual intervention.",
+        "height": 720,
         "width": 528,
         "color": 7
       },
@@ -435,7 +435,7 @@
       "typeVersion": 1,
       "position": [
         -2576,
-        -1760
+        -1808
       ],
       "id": "4aa9f81a-0626-4b07-83b3-ffcf13c52ff0",
       "name": "Sticky Note1"
@@ -805,7 +805,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "b30b0d0b-de1e-446b-9b53-9a05ea3b8a0d",
+  "versionId": "7353f90b-0bd3-4c6a-9c8e-4f3d77e506db",
   "meta": {
     "instanceId": "0cff407a71a27fe4567174d437c17b375e2be185280e462f09b3459f6ab113d8"
   },

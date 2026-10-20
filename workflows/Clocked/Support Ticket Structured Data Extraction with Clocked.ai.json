@@ -142,15 +142,15 @@
     },
     {
       "parameters": {
-        "content": "## Support Ticket Structured Data Extraction with Clocked.ai\n\n### How it works\n\nThis workflow manually processes a support ticket using Clocked.ai to extract structured information. It generates a unique request ID, sends the ticket and extraction schema to the Clocked.ai API, converts the response to binary, and writes the output to a file.\n\n### Setup steps\n\n- Configure the support ticket text and JSON extraction schema.\n- Set up Clocked.ai API authentication and the POST endpoint: `https://clocked.rezolve.ai/clocked/extract`.\n- Ensure the unique ID generator provides an idempotency key for each request.\n- Configure the binary conversion and output file path.\n- Execute the workflow and verify the extracted data and saved file.\n\n### Customization\n\nModify the extraction schema to capture ticket details, affected applications, troubleshooting steps, and callback requirements. Add validation, error handling, human review, or ticketing system integration as needed.",
-        "height": 672,
+        "content": "## Support Ticket Structured Data Extraction with Clocked (https://clocked.rezolve.ai/)\n\n### How it works\n\nThis workflow manually processes a support ticket using Clocked.ai to extract structured information. It generates a unique request ID, sends the ticket and extraction schema to the Clocked.ai API, converts the response to binary, and writes the output to a file.\n\n### Setup steps\n\n- Configure the support ticket text and JSON extraction schema.\n- Set up Clocked.ai API authentication and the POST endpoint: `https://clocked.rezolve.ai/clocked/extract`.\n- Ensure the unique ID generator provides an idempotency key for each request.\n- Configure the binary conversion and output file path.\n- Execute the workflow and verify the extracted data and saved file.\n\n### Customization\n\nModify the extraction schema to capture ticket details, affected applications, troubleshooting steps, and callback requirements. Add validation, error handling, human review, or ticketing system integration as needed.",
+        "height": 704,
         "width": 448,
         "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
         -1104,
-        -624
+        -656
       ],
       "typeVersion": 1,
       "id": "13aec8bb-7f81-4b25-ab47-5cbe1f0a6ed4",
@@ -292,7 +292,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "f06028fe-c992-4e7b-9501-cf2b64199057",
+  "versionId": "1d332b7f-eab3-44d7-be9e-573f41f79351",
   "meta": {
     "instanceId": "0cff407a71a27fe4567174d437c17b375e2be185280e462f09b3459f6ab113d8"
   },
