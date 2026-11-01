@@ -1,0 +1,212 @@
+{
+  "name": "Clocked MCP Client Extract Demo",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        -432
+      ],
+      "id": "390a3bdc-0068-4cb1-bbaa-7464413de110",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a4d5baa9-e2a5-4b8c-9f71-bd92c7502036",
+              "name": "textual_input",
+              "value": "NEW EMPLOYEE ONBOARDING - People Operations Candidate: Amina Rahman Personal contact: amina.rahman@example.com Role: Senior Financial Analyst Office: Manchester Start date: 19 October 2026 Equipment requested: ThinkPad T14, USB-C dock, two 27-inch monitors.  Onboarding checklist: - [ ] Contract signed - [ ] IT equipment ordered - [ ] Email account created - [ ] Building access granted - [ ] Line manager: Elena Costa assigned  Please process this new starter request.",
+              "type": "string"
+            },
+            {
+              "id": "26d25bd5-6569-46e1-a983-47922bea5577",
+              "name": "fields",
+              "value": "{   \"employee\": \"Current starter full name\",   \"role\": \"Current starter job title\",   \"start_date\": \"Revised start date of the current starter\",   \"office\": \"Office location of the current starter\",   \"equipment\": {     \"description\": \"Individual equipment items requested for the current starter\",     \"list\": true,     \"max_items\": 6   },   \"manager\": \"Assigned line manager of the current starter; empty if not assigned\" }",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -880,
+        -432
+      ],
+      "id": "038c8c25-5c26-470e-9975-7a05faea7ab7",
+      "name": "Set Fields"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://127.0.0.1:3001/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "clocked_extract",
+          "mode": "list",
+          "cachedResultName": "clocked_extract"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "text": "={{ $json.textual_input }}",
+            "fields": "={{ $json.fields }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "text",
+              "displayName": "text",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "instructions",
+              "displayName": "instructions",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "fields",
+              "displayName": "fields",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "object",
+              "defaultValue": "{}",
+              "removed": false
+            },
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        -432
+      ],
+      "id": "8ced24c8-fb55-4d6c-b00e-99a9b01df407",
+      "name": "Clocked MCP Client Extract"
+    },
+    {
+      "parameters": {
+        "fileName": "C:\\n8n\\data\\new_employee_onboarding_structured.json",
+        "options": {}
+      },
+      "id": "52dae7ba-83f1-4663-8c17-46db3236591e",
+      "name": "Write Binary File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "position": [
+        -240,
+        -432
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "functionCode": "items[0].binary = {\n  data: {\n    data: new Buffer(JSON.stringify(items[0].json, null, 2)).toString('base64')\n  }\n};\nreturn items;"
+      },
+      "id": "e6ccc9cf-43da-405a-8cb1-1cceb92fec74",
+      "name": "Convert To Binary",
+      "type": "n8n-nodes-base.function",
+      "position": [
+        -448,
+        -432
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fields": {
+      "main": [
+        [
+          {
+            "node": "Clocked MCP Client Extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clocked MCP Client Extract": {
+      "main": [
+        [
+          {
+            "node": "Convert To Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert To Binary": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "4b45eaf0-ebeb-411b-a971-a9b3e17297d8",
+  "meta": {
+    "instanceId": "0cff407a71a27fe4567174d437c17b375e2be185280e462f09b3459f6ab113d8"
+  },
+  "id": "FLMQIwcpFYSytzX9mSVH2",
+  "tags": [
+    {
+      "updatedAt": "2026-10-17T04:24:50.580Z",
+      "createdAt": "2026-10-17T04:24:50.580Z",
+      "id": "LFjNx5nO7QFEOk6P",
+      "name": "Rezolve.ai"
+    },
+    {
+      "updatedAt": "2026-10-17T15:54:36.100Z",
+      "createdAt": "2026-10-17T15:54:36.100Z",
+      "id": "iJ8ktiM77XyU8PzD",
+      "name": "AI"
+    }
+  ]
+}
